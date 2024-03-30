@@ -30,8 +30,7 @@ export default function Detect() {
   const captureFrame = async () => {
     if (cameraRef.current) {
       let photo = await cameraRef.current.takePictureAsync({
-        quality: 0, 
-        skipProcessing: true 
+        quality: 0.1
       });
       // const manipResult = await ImageManipulator.manipulateAsync(
       //   uri,
@@ -52,7 +51,7 @@ export default function Detect() {
     type: 'image/jpeg', 
     name: 'photo.jpg' 
   });
-  fetch('http://172.20.10.2:8081/camera', {
+  fetch('http://192.168.1.14:8081/camera', {
     method: 'POST',
     body: formData,
     headers: {
@@ -93,7 +92,7 @@ export default function Detect() {
 
   return (
     <View style={styles.container}>
-      <Camera style={styles.camera}       type={Camera.Constants.Type.back}
+      <Camera style={styles.camera} flashMode={Camera.Constants.FlashMode.off}      type={Camera.Constants.Type.back}
         ref={cameraRef}>
         <View style={styles.buttonContainer}>
           <Svg style={styles.svg}>
