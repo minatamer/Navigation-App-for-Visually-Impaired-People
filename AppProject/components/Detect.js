@@ -114,7 +114,7 @@ export default function Detect() {
                 fontSize="16"
                 style={{ color: 'green', paddingTop: box.y, paddingLeft: box.x}}
               >
-                {box.class}
+                {box.class} {'\n'}Distance: {parseFloat(box.distance.toFixed(1))} Inches
               </Text>
                ))}
           </Svg>

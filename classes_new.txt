@@ -1,0 +1,13 @@
+bed
+chair
+couch
+door_closed
+door_open
+obstacle
+oven
+person
+refrigerator
+sink
+table
+television
+toilet
