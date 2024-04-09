@@ -1,8 +1,8 @@
 from flask import Flask, jsonify , request
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 import datetime
-from flask_marshmallow import Marshmallow
-from sqlalchemy import func
+# from flask_marshmallow import Marshmallow
+# from sqlalchemy import func
 from ultralytics import YOLO
 from PIL import Image
 import cv2 as cv
@@ -159,6 +159,7 @@ def camera():
                 y = data[i + 2] // 9
                 width = data[i + 3] // 18.5
                 height = data[i + 4] // 9
+                distance = distance * 2.54 #conversion to cm
                 response_data = {
                     'class': data[i + 0],
                     'x': x,
@@ -177,5 +178,6 @@ def camera():
 if __name__ == "__main__":
     with app.app_context():
         #app.run(debug=True)
-        app.run(host = '192.168.1.14' , port=8081 , debug=True)
+        #app.run(host = '192.168.1.14' , port=8081 , debug=True)
+        app.run(host = '192.168.1.15' , port=8081 , debug=True)
         #app.run(host = '172.20.10.2' , port=8081 , debug=True)

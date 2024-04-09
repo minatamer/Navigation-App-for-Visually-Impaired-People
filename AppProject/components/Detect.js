@@ -2,20 +2,36 @@ import { Camera, CameraType } from 'expo-camera';
 import { useState, useEffect , useRef} from 'react';
 import { Svg, Rect } from 'react-native-svg';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as Speech from "expo-speech";
 
 export default function Detect() {
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const cameraRef = useRef(null);
   const [boundingBoxes, setBoundingBoxes] = useState([]);
-  const [videoRecordPromise, setVideoRecordPromise] = useState(null);
+  const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   //Force a delay before calling function to let the page load first
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       captureFrame();
     }, 500);
-    return () =>{};
+    return () =>{ Speech.stop();}; //Stop speech on unmount
   }, []);
+
+
+  const handleSpeak = (distance, className) => {
+    console.log('SPEAKING STATE ' + isSpeaking);
+    Speech.speak(`A ${className} is ${distance.toFixed(1)} centimeters away.`);
+  };
+
+  const debouncedHandleSpeak = (distance, className) => {
+    clearTimeout(debounceTimer); 
+    const timer = setTimeout(() => {
+      handleSpeak(distance, className); 
+    }, 4000); 
+    setDebounceTimer(timer); 
+  };
 
 //   useEffect(() => {
 //     const intervalId = setInterval(() => {
@@ -30,7 +46,7 @@ export default function Detect() {
   const captureFrame = async () => {
     if (cameraRef.current) {
       let photo = await cameraRef.current.takePictureAsync({
-        quality: 0.1
+        quality: 0.2
       });
       // const manipResult = await ImageManipulator.manipulateAsync(
       //   uri,
@@ -45,13 +61,14 @@ export default function Detect() {
 
   const sendDataToBackend = async (photo) => {
     const startTime = new Date();
+    var dataArray = null;
   const formData = new FormData();
   formData.append('image', {
     uri: photo.uri,
     type: 'image/jpeg', 
     name: 'photo.jpg' 
   });
-  fetch('http://192.168.1.14:8081/camera', {
+  fetch('http://192.168.1.15:8081/camera', {
     method: 'POST',
     body: formData,
     headers: {
@@ -65,14 +82,24 @@ export default function Detect() {
       const duration = endTime - startTime; 
       console.log('Request duration:', duration, 'ms');
       console.log('Response from backend:', data);
+      if (data.length ===0){
+        setFlashMode(Camera.Constants.FlashMode.torch);
+      }
+      else{
+        for (const box of data) {
+          if (box.distance < 50) {
+            handleSpeak(box.distance, box.class);
+            break;
+          }
+        }
+      }
       setBoundingBoxes(data);
-      captureFrame();
     })
     .catch(error => {
       // console.error('Error sending data to backend:', error);
       setBoundingBoxes([]);
-      captureFrame();
     });
+    captureFrame();
 };
 
   if (!permission) {
@@ -92,7 +119,7 @@ export default function Detect() {
 
   return (
     <View style={styles.container}>
-      <Camera style={styles.camera} flashMode={Camera.Constants.FlashMode.off}      type={Camera.Constants.Type.back}
+      <Camera style={styles.camera} flashMode= {flashMode} type={Camera.Constants.Type.back}
         ref={cameraRef}>
         <View style={styles.buttonContainer}>
           <Svg style={styles.svg}>
@@ -114,7 +141,7 @@ export default function Detect() {
                 fontSize="16"
                 style={{ color: 'green', paddingTop: box.y, paddingLeft: box.x}}
               >
-                {box.class} {'\n'}Distance: {parseFloat(box.distance.toFixed(1))} Inches
+                {box.class} {'\n'}Distance: {parseFloat(box.distance.toFixed(1))} cm
               </Text>
                ))}
           </Svg>
