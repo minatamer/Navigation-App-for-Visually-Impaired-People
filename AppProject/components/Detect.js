@@ -9,7 +9,6 @@ export default function Detect() {
   const cameraRef = useRef(null);
   const [boundingBoxes, setBoundingBoxes] = useState([]);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
-  const [isSpeaking, setIsSpeaking] = useState(false);
 
   //Force a delay before calling function to let the page load first
   useEffect(() => {
@@ -21,38 +20,14 @@ export default function Detect() {
 
 
   const handleSpeak = (distance, className) => {
-    console.log('SPEAKING STATE ' + isSpeaking);
     Speech.speak(`A ${className} is ${distance.toFixed(1)} centimeters away.`);
   };
-
-  const debouncedHandleSpeak = (distance, className) => {
-    clearTimeout(debounceTimer); 
-    const timer = setTimeout(() => {
-      handleSpeak(distance, className); 
-    }, 4000); 
-    setDebounceTimer(timer); 
-  };
-
-//   useEffect(() => {
-//     const intervalId = setInterval(() => {
-//       captureFrame();
-//     }, 1000);
-//     return () => {
-//         clearInterval(intervalId);
-//     };
-// }, []);
-
 
   const captureFrame = async () => {
     if (cameraRef.current) {
       let photo = await cameraRef.current.takePictureAsync({
         quality: 0.2
       });
-      // const manipResult = await ImageManipulator.manipulateAsync(
-      //   uri,
-      //   [{ resize: { width : 480, height : 640 } }],
-      //   { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
-      // );
       sendDataToBackend(photo);
 
     }
@@ -61,44 +36,48 @@ export default function Detect() {
 
   const sendDataToBackend = async (photo) => {
     const startTime = new Date();
-    var dataArray = null;
   const formData = new FormData();
   formData.append('image', {
     uri: photo.uri,
     type: 'image/jpeg', 
     name: 'photo.jpg' 
   });
-  fetch('http://192.168.1.15:8081/camera', {
-    method: 'POST',
-    body: formData,
-    headers: {
-      'Content-Type': 'application/json',
-      "Content-Type": "multipart/form-data",
-    },
-  })
-    .then(response => response.json())
-    .then(data => {
-      const endTime = new Date();
-      const duration = endTime - startTime; 
-      console.log('Request duration:', duration, 'ms');
-      console.log('Response from backend:', data);
-      if (data.length ===0){
-        setFlashMode(Camera.Constants.FlashMode.torch);
-      }
-      else{
-        for (const box of data) {
-          if (box.distance < 50) {
-            handleSpeak(box.distance, box.class);
-            break;
-          }
+  try {
+    const response = await fetch('http://192.168.1.15:8081/camera', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    const data = await response.json();
+
+    const endTime = new Date();
+    const duration = endTime - startTime; 
+    console.log('Request duration:', duration, 'ms');
+    console.log('Response from backend:', data);
+
+    if (data.length === 0) {
+      setFlashMode(Camera.Constants.FlashMode.torch);
+    } else {
+      setFlashMode(Camera.Constants.FlashMode.off);
+      let isSpeaking = await Speech.isSpeakingAsync();
+      for (const box of data) {
+        if (box.distance < 50  && !isSpeaking) {
+          handleSpeak(box.distance, box.class);
+          break;
         }
       }
-      setBoundingBoxes(data);
-    })
-    .catch(error => {
-      // console.error('Error sending data to backend:', error);
-      setBoundingBoxes([]);
-    });
+    }
+
+    setBoundingBoxes(data);
+  } catch (error) {
+    console.error('Error sending data to backend:', error);
+    setBoundingBoxes([]);
+  }
+
+  captureFrame();
     captureFrame();
 };
 
@@ -116,10 +95,16 @@ export default function Detect() {
       </View>
     );
   }
+  const onCameraReady = async () => {
+    if (cameraRef.current) {
+      const size = await cameraRef.current.getAvailablePictureSizesAsync('4:3');
+      console.log(size);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <Camera style={styles.camera} flashMode= {flashMode} type={Camera.Constants.Type.back}
+      <Camera style={styles.camera} flashMode= {flashMode} type={Camera.Constants.Type.back} 
         ref={cameraRef}>
         <View style={styles.buttonContainer}>
           <Svg style={styles.svg}>
