@@ -1,13 +1,12 @@
 from flask import Flask, jsonify , request
-# from flask_sqlalchemy import SQLAlchemy
-import datetime
-# from flask_marshmallow import Marshmallow
-# from sqlalchemy import func
 from ultralytics import YOLO
 from PIL import Image
 import cv2 as cv
 import os
+from gtts import gTTS
+import math
 import time
+import datetime
 
 # Distance constants 
 KNOWN_DISTANCE = 45 #INCHES
@@ -26,6 +25,8 @@ SINK_WIDTH= 23.6 #INCHES #529.4 pixels
 TV_WIDTH=  39.3 #INCHES #881.6 pixels
 TOILET_WIDTH= 13.8 #INCHES #309.6 pixels
 BED_WIDTH= 47.2 #INCHES #1058 pixels
+STAIRS_WIDTH= 42 #INCHES #941 pixels
+
 
 # colors for object detected
 COLORS = [(255,0,0),(255,0,255),(0, 255, 255), (255, 255, 0), (0, 255, 0), (255, 0, 0)]
@@ -68,7 +69,7 @@ def object_detector(image):
         height = y2-y1
         # getting the data 
         # if int(detected_class) ==0 or int(detected_class) ==67 or int(detected_class) == 56 or int(detected_class) == 39 or int(detected_class) == 60: 
-        if (int(detected_class) >= 0 and int(detected_class) <=12):
+        if (int(detected_class) >= 0 and int(detected_class) <=13):
             data_list.append(class_names[int(detected_class)])
             data_list.append(x1)             
             data_list.append(y1)
@@ -130,8 +131,52 @@ focal_toilet = focal_length_finder(KNOWN_DISTANCE, TOILET_WIDTH, toilet_data)
 bed_data = 1058
 focal_bed = focal_length_finder(KNOWN_DISTANCE, BED_WIDTH, bed_data)
 
+stairs_data = 941
+focal_stairs = focal_length_finder(KNOWN_DISTANCE, STAIRS_WIDTH, stairs_data)
+
 
 #@app.route('/' , methods = ['GET'])
+
+def translate_to_arabic(word):
+    translations = {
+        "bed": "سرير",
+        "chair": "كرسي",
+        "couch": "أريكة",
+        "door_closed": "باب مغلق",
+        "door_open": "باب مفتوح",
+        "obstacle": "عائق",
+        "oven": "فرن",
+        "person": "شخص",
+        "refrigerator": "ثلاجة",
+        "sink": "حوض",
+        "stairs": "سلالم",
+        "table": "طاولة",
+        "television": "تلفزيون",
+        "toilet": "الحمام"
+    }
+    
+    return translations.get(word, "Translation not available")
+
+def file_creation_time_check(file_path, threshold_seconds=6):
+    try:
+        # Get the creation time of the file in seconds since the epoch
+        creation_time = os.path.getctime(file_path)
+        # Get the current time in seconds since the epoch
+        current_time = time.time()
+        # Calculate the difference between current time and creation time
+        time_difference = current_time - creation_time
+        print('TIME DIFFERENCE IS ' + time_difference)
+        # Check if it's been at least threshold_seconds since creation time
+        if time_difference >= threshold_seconds:
+            return True
+        else:
+            return False
+    except FileNotFoundError:
+        print('File not found')
+        return False
+    except Exception as e:
+        print('Error occurred:', e)
+        return False
 
 @app.route('/camera' , methods = ['POST' , 'GET'])
 # def camera():
@@ -179,7 +224,7 @@ def camera():
                 #         distance = distance_finder (focal_person, PERSON_WIDTH, data[i + 1]) 
                 #     elif data[i + 0] =='chair' :   
                 #         distance = distance_finder (focal_chair, CHAIR_WIDTH, data[i + 1]) 
-                if data[i + 0] =='person' or data[i + 0] == 'chair' or data[i + 0] == 'table' or data[i + 0] == 'door_closed' or data[i + 0] == 'door_open' or data[i + 0] == 'refrigerator' or data[i + 0] == 'obstacle' or data[i + 0] == 'couch' or data[i + 0] == 'oven'  or data[i + 0] == 'sink' or data[i + 0] == 'television' or data[i + 0] == 'toilet' or data[i + 0] == 'bed' :
+                if data[i + 0] =='person' or data[i + 0] == 'chair' or data[i + 0] == 'table' or data[i + 0] == 'door_closed' or data[i + 0] == 'door_open' or data[i + 0] == 'refrigerator' or data[i + 0] == 'obstacle' or data[i + 0] == 'couch' or data[i + 0] == 'oven'  or data[i + 0] == 'sink' or data[i + 0] == 'television' or data[i + 0] == 'toilet' or data[i + 0] == 'bed' or data[i + 0] == 'stairs' :
                     if data[i + 0] =='person' :   
                         distance = distance_finder (focal_person, PERSON_WIDTH, data[i + 3]) 
                     elif data[i + 0] =='chair' :   
@@ -206,6 +251,8 @@ def camera():
                         distance = distance_finder (focal_toilet, TOILET_WIDTH, data[i + 3])
                     elif data[i + 0] =='bed' :   
                         distance = distance_finder (focal_bed, BED_WIDTH, data[i + 3])
+                    elif data[i + 0] =='stairs' :   
+                        distance = distance_finder (focal_stairs, STAIRS_WIDTH, data[i + 3])
                 x = data[i + 1] // 18.5
                 y = data[i + 2] // 9
                 width = data[i + 3] // 9.25
@@ -220,6 +267,22 @@ def camera():
                     'distance': distance
                 } 
                 response_data_list.append(response_data)
+                # ARABIC TRANSLATION PART
+                if file_creation_time_check("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3"):
+                    print('AJDOJFORHGARPOFHAWEFHAWFUAHEIFOEAWFIUHEFIAFEA')
+                if data[i + 0] is not None and data[i + 0] != "" and distance<=50 and data[i + 0] == 'bed' :
+                    object_ar = translate_to_arabic(data[i + 0])
+                    distance_rounded = math.ceil(distance)
+                    arabic_text = object_ar + "على بعد" + str(distance_rounded)+ "سنتيمتر"
+                    tts = gTTS(text=arabic_text, lang='ar') 
+                    # if not os.path.exists("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3"):
+                    #     tts = gTTS(text=arabic_text, lang='ar') 
+                    #     tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3")
+                    # else:
+                    #     print("File already exists. Skipping save operation.")
+                    tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3")
+                    print('OVERWRITTENNNNNNNNNNNNN')
+                
             print(response_data_list)
             return jsonify(response_data_list)
         return 'error'
@@ -231,4 +294,5 @@ if __name__ == "__main__":
         #app.run(debug=True)
         #app.run(host = '192.168.1.14' , port=8081 , debug=True)
         app.run(host = '192.168.1.15' , port=8081 , debug=True)
-        #app.run(host = '172.20.10.2' , port=8081 , debug=True)
+        # app.run(host = '172.20.10.2' , port=8081 , debug=True)
+        # app.run(host = '172.20.10.4' , port=8081 , debug=True)

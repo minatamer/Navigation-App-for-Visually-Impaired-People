@@ -8,6 +8,7 @@ oven
 person
 refrigerator
 sink
+stairs
 table
 television
 toilet

@@ -1,8 +1,9 @@
 import { Camera, CameraType } from 'expo-camera';
 import { useState, useEffect , useRef} from 'react';
 import { Svg, Rect } from 'react-native-svg';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
 import * as Speech from "expo-speech";
+import { Audio } from 'expo-av';
 
 export default function Detect() {
   const [permission, requestPermission] = Camera.useCameraPermissions();
@@ -10,8 +11,21 @@ export default function Detect() {
   const [boundingBoxes, setBoundingBoxes] = useState([]);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
 
+  async function playSound() {
+    try{
+      const { sound } = await Audio.Sound.createAsync( require('C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3'));
+      await sound.playAsync();
+    }
+    catch{
+
+    }
+
+
+  };
+
   //Force a delay before calling function to let the page load first
   useEffect(() => {
+    Vibration.vibrate(2000);
     const timeoutId = setTimeout(() => {
       captureFrame();
     }, 500);
@@ -20,7 +34,10 @@ export default function Detect() {
 
 
   const handleSpeak = (distance, className) => {
-    Speech.speak(`A ${className} is ${distance.toFixed(1)} centimeters away.`);
+    // Speech.speak(`A ${className} is ${distance.toFixed(1)} centimeters away.`);
+
+    playSound();
+    
   };
 
   const captureFrame = async () => {
@@ -62,9 +79,10 @@ export default function Detect() {
       setFlashMode(Camera.Constants.FlashMode.torch);
     } else {
       setFlashMode(Camera.Constants.FlashMode.off);
-      let isSpeaking = await Speech.isSpeakingAsync();
+      // let isSpeaking = await Speech.isSpeakingAsync();
       for (const box of data) {
-        if (box.distance < 50  && !isSpeaking) {
+        // if (box.distance < 50  && !isSpeaking) {
+          if (box.distance < 50 ) {
           handleSpeak(box.distance, box.class);
           break;
         }
