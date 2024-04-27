@@ -1,4 +1,5 @@
 from flask import Flask, jsonify , request
+from flask_cors import CORS
 from ultralytics import YOLO
 from PIL import Image
 import cv2 as cv
@@ -36,11 +37,19 @@ BLACK =(0,0,0)
 FONTS = cv.FONT_HERSHEY_COMPLEX
 
 app = Flask(__name__)
+# enable CORS
+CORS(app, resources={r'/*': {'origins': '*'}})
 model = YOLO("best.pt")
 
 class_names = []
 with open("classes_new.txt", "r") as f:
     class_names = [cname.strip() for cname in f.readlines()]
+
+speech_counter = 6
+
+def increment_counter():
+    global speech_counter
+    speech_counter = speech_counter + 1
 
 # focal length finder function 
 def focal_length_finder (measured_distance, real_width, width_in_rf):
@@ -157,59 +166,8 @@ def translate_to_arabic(word):
     
     return translations.get(word, "Translation not available")
 
-def file_creation_time_check(file_path, threshold_seconds=6):
-    try:
-        # Get the creation time of the file in seconds since the epoch
-        creation_time = os.path.getctime(file_path)
-        # Get the current time in seconds since the epoch
-        current_time = time.time()
-        # Calculate the difference between current time and creation time
-        time_difference = current_time - creation_time
-        print('TIME DIFFERENCE IS ' + time_difference)
-        # Check if it's been at least threshold_seconds since creation time
-        if time_difference >= threshold_seconds:
-            return True
-        else:
-            return False
-    except FileNotFoundError:
-        print('File not found')
-        return False
-    except Exception as e:
-        print('Error occurred:', e)
-        return False
 
 @app.route('/camera' , methods = ['POST' , 'GET'])
-# def camera():
-#         if 'image' in request.files:
-#             image = request.files['image']
-#             img = Image.open(image)
-#             # img.save('image.png')
-#             results = model.predict(source = img)
-#             boxes = results[0].boxes.xyxy.tolist()
-#             classes = results[0].boxes.cls.tolist()
-#             if not classes:  
-#                 return 'no class detected'
-#             response_data_list = []
-#             for box, cls in zip(boxes, classes):
-#                 x1, y1, x2, y2 = box
-#                 x1 = x1 // 18.5
-#                 y1 = y1 // 9
-#                 width = (x2 - x1) // 18.5
-#                 height = (y2 - y1) // 9
-#                 name = class_names[int(cls)]
-#                 response_data = {
-#                     'x': x1,
-#                     'y': y1,
-#                     'width': width,
-#                     'height': height,
-#                     'class': name
-#                 }
-
-#                 response_data_list.append(response_data)
-#             print(response_data_list)
-#             return jsonify(response_data_list)
-#         return 'error'
-
 def camera():
         if 'image' in request.files:
             image = request.files['image']
@@ -266,33 +224,41 @@ def camera():
                     'height': height,
                     'distance': distance
                 } 
-                response_data_list.append(response_data)
                 # ARABIC TRANSLATION PART
-                if file_creation_time_check("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3"):
-                    print('AJDOJFORHGARPOFHAWEFHAWFUAHEIFOEAWFIUHEFIAFEA')
-                if data[i + 0] is not None and data[i + 0] != "" and distance<=50 and data[i + 0] == 'bed' :
+                print("Current counter" , speech_counter)
+                if data[i + 0] is not None and data[i + 0] != "" and distance<=50 and speech_counter % 6 == 0:
                     object_ar = translate_to_arabic(data[i + 0])
                     distance_rounded = math.ceil(distance)
                     arabic_text = object_ar + "على بعد" + str(distance_rounded)+ "سنتيمتر"
                     tts = gTTS(text=arabic_text, lang='ar') 
-                    # if not os.path.exists("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3"):
-                    #     tts = gTTS(text=arabic_text, lang='ar') 
-                    #     tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3")
-                    # else:
-                    #     print("File already exists. Skipping save operation.")
-                    tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/assets/output.mp3")
-                    print('OVERWRITTENNNNNNNNNNNNN')
-                
+                    tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
+                    response_data['arabic'] = 'yes'
+                    increment_counter()
+                if (speech_counter % 6 != 0 ):
+                    increment_counter()
+                response_data_list.append(response_data)
             print(response_data_list)
             return jsonify(response_data_list)
         return 'error'
 
+@app.route('/video', methods=['POST' , 'GET'])
+def save_video():
+    if 'video' not in request.files:
+        return 'No file part', 400
 
+    file = request.files['video']
+    # Replace '/path/to/save/video/' with the path where you want to save the video file
+    save_directory = os.path.join(app.root_path, 'videos')  # Save videos in 'videos' directory within Flask project
+    os.makedirs(save_directory, exist_ok=True)  # Create directory if it doesn't exist
+    file.save(os.path.join(save_directory, 'video.mp4'))  # Save file to specified directory
+    # file.save('C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/video.mp4')
+
+    return 'Video saved successfully', 200
 
 if __name__ == "__main__":
     with app.app_context():
-        #app.run(debug=True)
+        # app.run(debug=True)
         #app.run(host = '192.168.1.14' , port=8081 , debug=True)
-        app.run(host = '192.168.1.15' , port=8081 , debug=True)
+        app.run(host = '192.168.1.15' , port=8080 , debug=True)
         # app.run(host = '172.20.10.2' , port=8081 , debug=True)
         # app.run(host = '172.20.10.4' , port=8081 , debug=True)

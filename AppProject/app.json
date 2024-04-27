@@ -27,6 +27,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-camera",
+        {
+          "recordAudioAndroid": true
+        }
+      ]
     ]
   }
 }

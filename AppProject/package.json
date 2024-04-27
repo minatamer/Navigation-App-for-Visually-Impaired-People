@@ -20,6 +20,7 @@
     "expo-camera": "~14.1.1",
     "expo-speech": "^11.7.0",
     "expo-status-bar": "~1.11.1",
+    "fs": "^0.0.1-security",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "^0.73.6",
@@ -34,7 +35,9 @@
     "react-native-tts": "^4.1.0",
     "react-native-web": "~0.19.6",
     "react-scripts": "3.4.3",
-    "react-webcam": "^5.2.0"
+    "react-webcam": "^5.2.0",
+    "expo-file-system": "~16.0.9",
+    "expo-asset": "~9.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
