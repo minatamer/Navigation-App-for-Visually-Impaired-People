@@ -20,6 +20,7 @@ export default function Detect() {
   const [boundingBoxes, setBoundingBoxes] = useState([]);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
   const [sound, setSound] = useState();
+  const [language, setLanguage] = useState('english');
 
   async function playSound() {
     try {
@@ -40,12 +41,12 @@ export default function Detect() {
       try {
         const video = await cameraRef.current.recordAsync({
           maxDuration: 3,
-          quality: "1080p",
+          quality: "4:3",
         });
         console.log("Video recorded at:", video.uri);
         sendVideoToBackend(video);
       } catch (error) {
-        console.error("Failed to record video:", error);
+        console.log("Failed to record video:", error);
       }
     }
   };
@@ -56,19 +57,29 @@ export default function Detect() {
     // Vibration.vibrate(2000);
     const timeoutId = setTimeout(() => {
       startRecording();
-      captureFrame();
     }, 500);
+    // setTimeout(() => {
+    //   console.log('New Language: ' , language)
+    //   // captureFrame();
+    // }, 15000);
     return () => {
       Speech.stop();
     }; //Stop speech on unmount
   }, []);
 
+  useEffect(() => {
+    captureFrame();
+  }, [language]);
+
   const handleSpeak = (distance, className) => {
     //English Speech
-    // Speech.speak(`A ${className} is ${distance.toFixed(1)} centimeters away.`);
-
-    //Arabic Speech
-    playSound();
+    if (language === "english"){
+      Speech.speak(`A ${className} is ${distance.toFixed(1)} centimeters away.`);
+    }
+    else {
+      //Arabic Speech
+      playSound();
+    }
   };
 
   const captureFrame = async () => {
@@ -108,14 +119,20 @@ export default function Detect() {
         setFlashMode(Camera.Constants.FlashMode.torch);
       } else {
         setFlashMode(Camera.Constants.FlashMode.off);
-        // let isSpeaking = await Speech.isSpeakingAsync();
+        let isSpeaking = await Speech.isSpeakingAsync();
         for (const box of data) {
-          // if (box.distance < 50  && !isSpeaking) {
-          if (box.distance < 50 && box.arabic === "yes") {
-            setTimeout(() => {
+          if (language === "english"){
+            if (box.distance < 50  && !isSpeaking) {
               handleSpeak(box.distance, box.class);
-            }, 1000);
-            break;
+            }
+          }
+          else{
+            if (box.distance < 50 && box.arabic === "yes") {
+              setTimeout(() => {
+                handleSpeak(box.distance, box.class);
+              }, 1000);
+              break;
+            }
           }
         }
       }
@@ -129,6 +146,7 @@ export default function Detect() {
     captureFrame();
     captureFrame();
   };
+
 
   const sendVideoToBackend = async (video) => {
     const startTime = new Date();
@@ -151,10 +169,23 @@ export default function Detect() {
       const duration = endTime - startTime;
       console.log("Request duration:", duration, "ms");
       console.log("Response from backend:", data);
+      if (data.includes("switch") || data.includes("language")) {
+        if (language === "english"){
+          console.log('Switching Langauge to Arabic');
+          setLanguage('arabic');
+        }
+        else{
+          console.log('Switching Langauge to English');
+          setLanguage('english');
+        }
+      }
     } catch (error) {
-      console.error("Error sending video to backend:", error);
+      console.log("Error sending video to backend:", error);
     }
+
   };
+
+
 
   if (!permission) {
     // Camera permissions are still loading

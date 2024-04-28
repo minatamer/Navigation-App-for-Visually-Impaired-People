@@ -8,6 +8,8 @@ from gtts import gTTS
 import math
 import time
 import datetime
+import speech_recognition as sr
+from moviepy.editor import *
 
 # Distance constants 
 KNOWN_DISTANCE = 45 #INCHES
@@ -40,12 +42,18 @@ app = Flask(__name__)
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
 model = YOLO("best.pt")
+recognizer = sr.Recognizer()
 
 class_names = []
 with open("classes_new.txt", "r") as f:
     class_names = [cname.strip() for cname in f.readlines()]
 
 speech_counter = 6
+
+def convert_mp4_to_wav(mp4_file, wav_file):
+    video_clip = VideoFileClip(mp4_file)
+    audio_clip = video_clip.audio
+    audio_clip.write_audiofile(wav_file)
 
 def increment_counter():
     global speech_counter
@@ -245,15 +253,25 @@ def camera():
 def save_video():
     if 'video' not in request.files:
         return 'No file part', 400
-
     file = request.files['video']
     # Replace '/path/to/save/video/' with the path where you want to save the video file
     save_directory = os.path.join(app.root_path, 'videos')  # Save videos in 'videos' directory within Flask project
     os.makedirs(save_directory, exist_ok=True)  # Create directory if it doesn't exist
     file.save(os.path.join(save_directory, 'video.mp4'))  # Save file to specified directory
-    # file.save('C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/video.mp4')
+    
+    #After Saving it, convert it to WAV for speech recognition english
+    source_path = 'C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
+    wav_path = "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/output.wav"
+    convert_mp4_to_wav(source_path, wav_path)
+    
+    # Load the WAV file
+    with sr.AudioFile(wav_path) as source:
+        audio_data = recognizer.record(source)
 
-    return 'Video saved successfully', 200
+    # Use the recognizer to transcribe speech from the WAV file
+    transcript = recognizer.recognize_google(audio_data)
+    return jsonify(transcript)
+
 
 if __name__ == "__main__":
     with app.app_context():
