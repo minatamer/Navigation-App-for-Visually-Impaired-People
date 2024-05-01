@@ -10,6 +10,7 @@ import time
 import datetime
 import speech_recognition as sr
 from moviepy.editor import *
+import whisper
 
 # Distance constants 
 KNOWN_DISTANCE = 45 #INCHES
@@ -43,6 +44,7 @@ app = Flask(__name__)
 CORS(app, resources={r'/*': {'origins': '*'}})
 model = YOLO("best.pt")
 recognizer = sr.Recognizer()
+speechModel = whisper.load_model("base")
 
 class_names = []
 with open("classes_new.txt", "r") as f:
@@ -259,18 +261,26 @@ def save_video():
     os.makedirs(save_directory, exist_ok=True)  # Create directory if it doesn't exist
     file.save(os.path.join(save_directory, 'video.mp4'))  # Save file to specified directory
     
-    #After Saving it, convert it to WAV for speech recognition english
+    # #After Saving it, convert it to WAV for speech recognition english
     source_path = 'C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
-    wav_path = "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/output.wav"
-    convert_mp4_to_wav(source_path, wav_path)
+    # wav_path = "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/output.wav"
+    # convert_mp4_to_wav(source_path, wav_path)
     
-    # Load the WAV file
-    with sr.AudioFile(wav_path) as source:
-        audio_data = recognizer.record(source)
+    # # Load the WAV file
+    # with sr.AudioFile(wav_path) as source:
+    #     audio_data = recognizer.record(source)
 
-    # Use the recognizer to transcribe speech from the WAV file
-    transcript = recognizer.recognize_google(audio_data)
-    return jsonify(transcript)
+    # # Use the recognizer to transcribe speech from the WAV file
+    # transcript = recognizer.recognize_google(audio_data)
+    
+    ###Voice Command to change the language: Will be asked if they want Arabic language
+    result_arabic = speechModel.transcribe(source_path, language='Arabic', fp16=False)
+    arabic_text = result_arabic["text"]
+    result_english = speechModel.transcribe(source_path, fp16=False)
+    english_text = result_english["text"]
+    contains_no_arabic = "لا" in arabic_text
+    contains_no_english = "no" in english_text
+    return jsonify(contains_no_arabic or contains_no_english)
 
 
 if __name__ == "__main__":

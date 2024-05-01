@@ -20,7 +20,7 @@ export default function Detect() {
   const [boundingBoxes, setBoundingBoxes] = useState([]);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
   const [sound, setSound] = useState();
-  const [language, setLanguage] = useState('english');
+  const [language, setLanguage] = useState('');
 
   async function playSound() {
     try {
@@ -53,15 +53,14 @@ export default function Detect() {
 
   //Force a delay before calling function to let the page load first
   useEffect(() => {
-    // playSound();
     // Vibration.vibrate(2000);
+    Speech.speak(`Do you want Arabic language?`);
     const timeoutId = setTimeout(() => {
-      startRecording();
-    }, 500);
-    // setTimeout(() => {
-    //   console.log('New Language: ' , language)
-    //   // captureFrame();
-    // }, 15000);
+
+      if (language === ''){
+        startRecording();
+      }
+    }, 3000);
     return () => {
       Speech.stop();
     }; //Stop speech on unmount
@@ -169,16 +168,27 @@ export default function Detect() {
       const duration = endTime - startTime;
       console.log("Request duration:", duration, "ms");
       console.log("Response from backend:", data);
-      if (data.includes("switch") || data.includes("language")) {
-        if (language === "english"){
-          console.log('Switching Langauge to Arabic');
+      // if (data.includes("switch") || data.includes("language")) {
+      //   if (language === "english"){
+      //     console.log('Switching Langauge to Arabic');
+      //     setLanguage('arabic');
+      //   }
+      //   else{
+      //     console.log('Switching Langauge to English');
+      //     setLanguage('english');
+      //   }
+      // }
+
+      if (data === false) {
+          console.log('Setting Langauge to Arabic');
           setLanguage('arabic');
         }
         else{
-          console.log('Switching Langauge to English');
+          console.log('Setting Langauge to English');
           setLanguage('english');
-        }
       }
+      
+
     } catch (error) {
       console.log("Error sending video to backend:", error);
     }
