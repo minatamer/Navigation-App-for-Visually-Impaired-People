@@ -16,6 +16,7 @@ import { Asset } from "expo-asset";
 
 export default function Detect() {
   const [permission, requestPermission] = Camera.useCameraPermissions();
+  // const [permission, requestPermission] = Camera.useMicrophonePermissions();
   const cameraRef = useRef(null);
   const [boundingBoxes, setBoundingBoxes] = useState([]);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off);
@@ -25,7 +26,7 @@ export default function Detect() {
   async function playSound() {
     try {
       const sourcePath =
-        "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3";
+        "C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3";
       const { sound } = await Audio.Sound.createAsync(require(sourcePath));
       setSound(sound);
       await sound.playAsync();
@@ -53,14 +54,13 @@ export default function Detect() {
 
   //Force a delay before calling function to let the page load first
   useEffect(() => {
-    // Vibration.vibrate(2000);
+    // Vibration.vibrate(2000);'
+    if (language === ''){
     Speech.speak(`Do you want Arabic language?`);
     const timeoutId = setTimeout(() => {
-
-      if (language === ''){
         startRecording();
-      }
     }, 3000);
+  }
     return () => {
       Speech.stop();
     }; //Stop speech on unmount
@@ -99,7 +99,7 @@ export default function Detect() {
       name: "photo.jpg",
     });
     try {
-      const response = await fetch("http://192.168.1.15:8080/camera", {
+      const response = await fetch("http://172.20.10.2:8080/camera", {
         method: "POST",
         body: formData,
         headers: {
@@ -156,7 +156,7 @@ export default function Detect() {
       name: "video.mp4",
     });
     try {
-      const response = await fetch("http://192.168.1.15:8080/video", {
+      const response = await fetch("http://172.20.10.2:8080/video", {
         method: "POST",
         body: formData,
         headers: {
