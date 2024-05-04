@@ -26,7 +26,20 @@ export default function Detect() {
   async function playSound() {
     try {
       const sourcePath =
-        "C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3";
+        "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3";
+      const { sound } = await Audio.Sound.createAsync(require(sourcePath));
+      setSound(sound);
+      await sound.playAsync();
+      setSound();
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+
+  async function playArabicIntro() {
+    try {
+      const sourcePath =
+        "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/arabic.mp3";
       const { sound } = await Audio.Sound.createAsync(require(sourcePath));
       setSound(sound);
       await sound.playAsync();
@@ -54,12 +67,14 @@ export default function Detect() {
 
   //Force a delay before calling function to let the page load first
   useEffect(() => {
-    // Vibration.vibrate(2000);'
     if (language === ''){
     Speech.speak(`Do you want Arabic language?`);
-    const timeoutId = setTimeout(() => {
+    const timeoutId1 = setTimeout(() => {
+      playArabicIntro();
+  }, 2500);
+    const timeoutId2 = setTimeout(() => {
         startRecording();
-    }, 3000);
+    }, 5000);
   }
     return () => {
       Speech.stop();
@@ -99,7 +114,7 @@ export default function Detect() {
       name: "photo.jpg",
     });
     try {
-      const response = await fetch("http://172.20.10.2:8080/camera", {
+      const response = await fetch("http://192.168.1.15:8080/camera", {
         method: "POST",
         body: formData,
         headers: {
@@ -128,6 +143,7 @@ export default function Detect() {
           else{
             if (box.distance < 50 && box.arabic === "yes") {
               setTimeout(() => {
+                Vibration.vibrate(2000);
                 handleSpeak(box.distance, box.class);
               }, 1000);
               break;
@@ -156,7 +172,7 @@ export default function Detect() {
       name: "video.mp4",
     });
     try {
-      const response = await fetch("http://172.20.10.2:8080/video", {
+      const response = await fetch("http://192.168.1.15:8080/video", {
         method: "POST",
         body: formData,
         headers: {

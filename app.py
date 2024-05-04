@@ -241,8 +241,8 @@ def camera():
                     distance_rounded = math.ceil(distance)
                     arabic_text = object_ar + "على بعد" + str(distance_rounded)+ "سنتيمتر"
                     tts = gTTS(text=arabic_text, lang='ar') 
-                    # tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
-                    tts.save("C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
+                    tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
+                    # tts.save("C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
                     response_data['arabic'] = 'yes'
                     increment_counter()
                 if (speech_counter % 6 != 0 ):
@@ -263,8 +263,8 @@ def save_video():
     file.save(os.path.join(save_directory, 'video.mp4'))  # Save file to specified directory
     
     # #After Saving it, convert it to WAV for speech recognition english
-    # source_path = 'C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
-    source_path = 'C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
+    source_path = 'C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
+    # source_path = 'C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
     # wav_path = "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/output.wav"
     # convert_mp4_to_wav(source_path, wav_path)
     
@@ -289,6 +289,6 @@ if __name__ == "__main__":
     with app.app_context():
         # app.run(debug=True)
         # app.run(host = '192.168.1.14' , port=8080 , debug=True)
-        # app.run(host = '192.168.1.15' , port=8080 , debug=True)
-        app.run(host = '172.20.10.2' , port=8080 , debug=True)
+        app.run(host = '192.168.1.15' , port=8080 , debug=True)
+        # app.run(host = '172.20.10.2' , port=8080 , debug=True)
         # app.run(host = '172.20.10.4' , port=8081 , debug=True)
