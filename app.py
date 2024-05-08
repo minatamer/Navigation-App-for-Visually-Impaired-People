@@ -31,6 +31,7 @@ TOILET_WIDTH= 13.8 #INCHES #309.6 pixels
 BED_WIDTH= 47.2 #INCHES #1058 pixels
 STAIRS_WIDTH= 42 #INCHES #941 pixels
 
+SOURCE = 'Mina'
 
 # colors for object detected
 COLORS = [(255,0,0),(255,0,255),(0, 255, 255), (255, 255, 0), (0, 255, 0), (255, 0, 0)]
@@ -42,7 +43,7 @@ FONTS = cv.FONT_HERSHEY_COMPLEX
 app = Flask(__name__)
 # enable CORS
 CORS(app, resources={r'/*': {'origins': '*'}})
-model = YOLO("best.pt")
+model = YOLO("model_best_1547.pt")
 # recognizer = sr.Recognizer()
 speechModel = whisper.load_model("base")
 
@@ -241,7 +242,7 @@ def camera():
                     distance_rounded = math.ceil(distance)
                     arabic_text = object_ar + "على بعد" + str(distance_rounded)+ "سنتيمتر"
                     tts = gTTS(text=arabic_text, lang='ar') 
-                    tts.save("C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
+                    tts.save(f"C:/Users/{SOURCE}/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
                     # tts.save("C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3")
                     response_data['arabic'] = 'yes'
                     increment_counter()
@@ -262,19 +263,9 @@ def save_video():
     os.makedirs(save_directory, exist_ok=True)  # Create directory if it doesn't exist
     file.save(os.path.join(save_directory, 'video.mp4'))  # Save file to specified directory
     
-    # #After Saving it, convert it to WAV for speech recognition english
-    source_path = 'C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
+    source_path = f"C:/Users/{SOURCE}/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/AppProject/output.mp3"
     # source_path = 'C:/Users/pc/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/video.mp4'
-    # wav_path = "C:/Users/Mina/Desktop/bachelor/Navigation-App-for-Visually-Impaired-People/videos/output.wav"
-    # convert_mp4_to_wav(source_path, wav_path)
-    
-    # # Load the WAV file
-    # with sr.AudioFile(wav_path) as source:
-    #     audio_data = recognizer.record(source)
-
-    # # Use the recognizer to transcribe speech from the WAV file
-    # transcript = recognizer.recognize_google(audio_data)
-    
+  
     ###Voice Command to change the language: Will be asked if they want Arabic language
     result_arabic = speechModel.transcribe(source_path, language='Arabic', fp16=False)
     arabic_text = result_arabic["text"]
